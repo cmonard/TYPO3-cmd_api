@@ -1,5 +1,6 @@
 TYPO3-cmd_api
 =============
 
-The cmd_api for TYPO3 extension, provide useful functions.
+cmd_api extension for TYPO3
+
 Collection of useful functions helping in extension development
