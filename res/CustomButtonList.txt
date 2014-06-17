@@ -1,0 +1,11 @@
+# Custom Button List example:
+mod.web_list.customButtonList = 1
+mod.web_list.customButtonList {
+ 1 {
+   table = fe_users
+   id=8
+   additionalParams = &tx_myextension_pi1[rU]=###uid###
+   title.default = test
+   title.fr = test
+ }
+}

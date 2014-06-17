@@ -1,0 +1,2 @@
+  # cat=Diver/enable/10; type=boolean; label=Custom button in web>list : check if you want to add custom button to web>list mode (based on 6.2.0)
+customButton=0
