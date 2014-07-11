@@ -37,31 +37,31 @@ namespace CMD\CmdApi;
  *
  *   80: class Lib
  *  147:        public function __construct(&$caller, $prefixArray = array(), $dateArray = array(), wrap = '')
- *  183:        public function initFlexform($flex = '')
- *  209:        public function getTemplate($type)
- *  246:        public function getGlobalMarker($content)
- *  268:        public function getLanguage($content)
- *  291:        public function getPiVars($content)
- *  312:        public function getTCALanguage($content, $table = '', $tableInMarker = FALSE)
- *  342:        public function insertLanguagesAndClean($content, $tableArray = array())
- *  366:        public function subpartContent($content, $subpart, $keep = TRUE)
- *  380:        public function getUrl($url, $insertSiteUrl = FALSE)
- *  423:        public function generateMarkersFromTableRow($table, $row, $tableInMarker = FALSE, $generateLabel = FALSE, $getOL = TRUE, $localizedAsUID = FALSE, $nbRes = 1)
- *  497:        protected function getRowLanguage($table, $row)
- *  519:        public function drawDoubleSelectBox($table, $field, $Ftable, $label, $MM = FALSE, $ftWhere = '', $ajax = '', $pid = 0, $row = '', $getOL = TRUE)
- *  847:        public function drawSimpleSelectBox($table, $field, $Ftable, $label, $pushEmpty = FALSE, $ftWhere = '', $ajax = '', $pid = 0, $getOL = TRUE)
- *  894:        public function drawRTE(&$markerArray, $table, $field, $value = '', $tableInMarker = FALSE) (need rtehtmlarea)
- *  924:        public function getRTE($table, $row, $field) (need rtehtmlarea)
- *  939:        public function generateInputMarkersFromTable($table, $pid = 0, $row = array(), $tableInMarker = FALSE)
- * 1114:        public function getRequiredMarkerForTable($table, $label = 1, $tableInMarker = FALSE)
- * 1133:        public function testFieldForTable($table, &$row, &$evaluatedRow)
+ *  182:        public function initFlexform($flex = '')
+ *  208:        public function getTemplate($type)
+ *  245:        public function getGlobalMarker($content)
+ *  267:        public function getLanguage($content)
+ *  290:        public function getPiVars($content)
+ *  311:        public function getTCALanguage($content, $table = '', $tableInMarker = FALSE)
+ *  341:        public function insertLanguagesAndClean($content, $tableArray = array())
+ *  367:        public function subpartContent($content, $subpart, $keep = TRUE)
+ *  381:        public function getUrl($url, $insertSiteUrl = FALSE)
+ *  424:        public function generateMarkersFromTableRow($table, $row, $tableInMarker = FALSE, $generateLabel = FALSE, $getOL = TRUE, $localizedAsUID = FALSE, $nbRes = 1)
+ *  498:        protected function getRowLanguage($table, $row)
+ *  520:        public function drawDoubleSelectBox($table, $field, $Ftable, $label, $MM = FALSE, $ftWhere = '', $ajax = '', $pid = 0, $row = '', $getOL = TRUE)
+ *  848:        public function drawSimpleSelectBox($table, $field, $Ftable, $label, $pushEmpty = FALSE, $ftWhere = '', $ajax = '', $pid = 0, $getOL = TRUE)
+ *  895:        public function drawRTE(&$markerArray, $table, $field, $value = '', $tableInMarker = FALSE) (need rtehtmlarea)
+ *  925:        public function getRTE($table, $row, $field) (need rtehtmlarea)
+ *  940:        public function generateInputMarkersFromTable($table, $pid = 0, $row = array(), $tableInMarker = FALSE)
+ * 1115:        public function getRequiredMarkerForTable($table, $label = 1, $tableInMarker = FALSE)
+ * 1134:        public function testFieldForTable($table, &$row, &$evaluatedRow)
  * 1319:        public function getListGetPageBrowser($nbPage, $pointerName = 'pointer') (need pagebrowser)
  * 1350:        protected function getHook($hookName, &$hookConf)
  * 1376:        protected function userFunc($funcName, $funcConf)
  * 1387:        public function initXajax($functions = array()) (need xajax)
  * 1420:        public function getXajaxFunction($funcName, $method, $formName = '', $otherParams = '') (need xajax)
  * 1436:        public function setXajaxAssign($response = array()) (need xajax)
- * 1488:        public function quoteForLike($fields, $table, $value, $pos = 'end')
+ * 1488:        public function quoteForLike($fields, $table, $value, $pos = 'end', $reverseSearch = FALSE, $escapeString = TRUE)
  * 1533:        public function cleanIntWhere($field, $value)
  * 1544:        public function cleanIntFind($field, $value)
  *
@@ -351,6 +351,8 @@ class Lib {
                 $content = Api::cleanTemplate($content);
                 if ($this->caller->conf['wrapInBaseClass'] && $this->caller->conf['wrapInBaseClass'] == 1)
                         $content = $this->caller->pi_wrapInBaseClass($content);
+                if ($this->caller->conf['contentStdWrap.'])
+                        $content = $this->localcObj->stdWrap($content, $this->caller->conf['contentStdWrap.']);
                 return $content;
         }
 
@@ -1383,7 +1385,7 @@ LINE;
          * @return	l'objet ajax
          */
         public function initXajax($functions = array()) {
-//		instanciation du moteur ajax
+		// instanciation du moteur ajax
                 if (!ExtensionManagementUtility::isLoaded('xajax'))
                         return 'xajax needed!';
                 elseif (!$this->xajax) {
@@ -1394,12 +1396,12 @@ LINE;
                 $xajax->cleanBufferOn(); // clear any white space ;)
                 $xajax->decodeUTF8InputOn();
                 $xajax->setWrapperPrefix($this->caller->prefixId);
-//		 Register the names of the PHP functions you want to be able to call through xajax
-//		 $xajax->registerFunction(array('functionNameInJavascript', &$object, 'methodName'));
+		// Register the names of the PHP functions you want to be able to call through xajax
+		// $xajax->registerFunction(array('functionNameInJavascript', &$object, 'methodName'));
                 if (count($functions) > 0)
                         foreach ($functions as $func)
                                 $xajax->registerFunction(array($func, &$this->caller, $func));
-//		 basic test but enable to have more than 1 xajax plugin on a page
+		// basic test but enable to have more than 1 xajax plugin on a page
                 if (in_array($_POST['xajax'], $functions))
                         $xajax->processRequests();
                 $GLOBALS['TSFE']->additionalHeaderData[$this->caller->prefixId . '_xajax'] = $xajax->getJavascript(ExtensionManagementUtility::siteRelPath('xajax'));

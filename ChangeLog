@@ -1,5 +1,7 @@
--2014-05-06 Christophe Monard  <contact@cmonard.fr>
+2014-07-11 Christophe Monard  <contact@cmonard.fr>
         * Added possibility to change sort field in list mode: mod.web_list.alternateSortingField.table = field ASC/DESC
+        * Added contentStdWrap to insertLanguagesAndClean function, simply declare contentStdWrap.xxx in your extension configuration to wrap the wole content
+        * Added flexFormAutoLoader in Api. Allow to autoload all flexform of an extension by reading there name and declaring all lines of ext_tables.php - Thanks Hydris Lefeuvre
 
 2014-03-27 Christophe Monard  <contact@cmonard.fr>
         * Custom Button List upgraded with 6.2 code

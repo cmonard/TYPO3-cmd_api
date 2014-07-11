@@ -36,21 +36,22 @@ namespace CMD\CmdApi;
  *
  * [CLASS/FUNCTION INDEX of SCRIPT]
  *
- *   64: class Api
- *   72:        static public function cleanTemplate($content)
- *   89:        static public function stripAccentsAndSpaces_doTransform($content, $spaceReplacer = '', $transform = '', $trueUTF8 = TRUE)
- *  123:        static public function getCheckboxValues($table, $field, $row)
- *  142:        static public function getFieldsFromTable($table, $exclude = array('l10n_parent', 'l10n_diffsource'))
- *  166:        static public function sendMail($param = array())
- *  236:        static public function getTS($rootPid = 1, $ext = '')
- *  286:        static public function initEID($param, &$connected = '', &$BE_USER = '', $getTSFE = FALSE)
- *  329:        static public function getCache($key, $identifier, $expTime = 0)
- *  344:        static public function setCache($key, $identifier, $data)
- *  358:        static public function autoConnect($userRow)
- *  374:        static public function manageCookie($key, $setAndSave = FALSE, $data = '', $type = 'user', $userObject = NULL)
- *  415:        static public function addPItoST43for6x($key, $namespace, $prefix = '', $type = 'list_type', $cached = 0)
+ *   65: class Api
+ *   73:        static public function cleanTemplate($content)
+ *   90:        static public function stripAccentsAndSpaces_doTransform($content, $spaceReplacer = '', $transform = '', $trueUTF8 = TRUE)
+ *  124:        static public function getCheckboxValues($table, $field, $row)
+ *  143:        static public function getFieldsFromTable($table, $exclude = array('l10n_parent', 'l10n_diffsource'))
+ *  167:        static public function sendMail($param = array())
+ *  237:        static public function getTS($rootPid = 1, $ext = '')
+ *  287:        static public function initEID($param, &$connected = '', &$BE_USER = '', $getTSFE = FALSE)
+ *  330:        static public function getCache($key, $identifier, $expTime = 0)
+ *  345:        static public function setCache($key, $identifier, $data)
+ *  359:        static public function autoConnect($userRow)
+ *  375:        static public function manageCookie($key, $setAndSave = FALSE, $data = '', $type = 'user', $userObject = NULL)
+ *  416:        static public function addPItoST43for6x($key, $namespace, $prefix = '', $type = 'list_type', $cached = 0)
+ *  468:        static public function flexFormAutoLoader($extKey)
  *
- * TOTAL FUNCTIONS: 12
+ * TOTAL FUNCTIONS: 13
  *
  */
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -454,6 +455,26 @@ plugin.' . $cN . $prefix . ' {
 # Setting ' . $key . ' plugin TypoScript
 ' . $addLine . '
 ', 43);
+                }
+        }
+
+        /**
+         * Call this function at the end of your ext_tables.php to autoregister the flexforms of the extension to the given plugins.
+         *
+         * @param string $extKey The extension key
+         *
+         * @return void
+         */
+        static public function flexFormAutoLoader($extKey) {
+                $FlexFormPath = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath($extKey) . 'Configuration/FlexForms/';
+
+                $FlexForms = GeneralUtility::getFilesInDir($FlexFormPath, 'xml');
+                foreach ($FlexForms as $FlexForm) {
+                        $fileKey = str_replace('.xml', '', $FlexForm);
+                        $pluginSignature = strtolower($extKey . '_' . $fileKey);
+                        $GLOBAL['TCA']['tt_content']['types']['list']['subtypes_excludelist'][$pluginSignature] = 'layout,select_key,recursive';
+                        $GLOBAL['TCA']['tt_content']['types']['list']['subtypes_addlist'][$pluginSignature] = 'pi_flexform';
+                        \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPiFlexFormValue($pluginSignature, 'FILE:EXT:' . $extKey . '/Configuration/FlexForms/' . $FlexForm);
                 }
         }
 

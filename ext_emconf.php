@@ -3,7 +3,7 @@
 /***************************************************************
  * Extension Manager/Repository config file for ext "cmd_api".
  *
- * Auto generated 21-02-2014 10:10
+ * Auto generated 11-07-2014 14:59
  *
  * Manual updates:
  * Only the data in the array - everything else is removed by next
