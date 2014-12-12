@@ -1,3 +1,15 @@
+2014-12-12 Christophe Monard  <contact@cmonard.fr>
+        * Huge refactor of the extension! Try to make it easier to read, lighter files and better performances
+        * Add some new specific class to replace very long Lib main class
+        * Moved a lot of function of Lib in other classes (functions are still present for compatibility)
+        * new class: FieldsRender, Query, Xajax
+        * Fix Scheduler constructor
+        * Moved icons resources to new folder structure
+        * Now you can choose ordre of marker replacement for insertLanguagesAndClean. Use constructor hook to manipulate $markerFunc member 
+                (actualy 4 functions : getGlobalMarker, getLanguage, getPiVars, getTCALanguage)
+        * Lot of bugfixes
+        * Improved getPiVars function
+
 2014-07-11 Christophe Monard  <contact@cmonard.fr>
         * Added possibility to change sort field in list mode: mod.web_list.alternateSortingField.table = field ASC/DESC
         * Added contentStdWrap to insertLanguagesAndClean function, simply declare contentStdWrap.xxx in your extension configuration to wrap the wole content

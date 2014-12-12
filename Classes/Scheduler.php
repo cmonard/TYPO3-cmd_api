@@ -36,13 +36,13 @@ namespace CMD\CmdApi;
  * [CLASS/FUNCTION INDEX of SCRIPT]
  *
  *   59: class Scheduler
- *   72:        public function __construct($onlyClassname = '', $includeDisabled = TRUE)
- *   99:        public function getTask($id = 0)
- *  114:        public function isTaskPlanned($id)
- *  127:        public function isTaskRunning($id)
- *  140:        public function destroyTask($id)
- *  164:        public function activateTask($idOrClassname, $parameters = array())
- *  220:        protected function getHook($hookName, &$hookConf = array())
+ *   73:        public function __construct($onlyClassname = '', $includeDisabled = TRUE)
+ *  104:        public function getTask($id = 0)
+ *  121:        public function isValidTask($id)
+ *  135:        public function isTaskPlanned($id)
+ *  149:        public function isTaskRunning($id)
+ *  163:        public function destroyTask($id)
+ *  188:        public function activateTask($idOrClassname, $parameters = array())
  *
  * TOTAL FUNCTIONS: 7
  *
@@ -58,35 +58,40 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
  */
 class Scheduler {
 
-        private $scheduler = object;
-        private $task = array();
+        protected $scheduler = object;
+        protected $task = array();
+        public $taskCount = 0;
 
         /**
          * Class constructor
          * Retrieve task from scheduler, can be limited by using 2 parameters
          *
-         * @param	string		$onlyClassname: only class like this are fetched
+         * @param	array		$onlyClassname: only class like these are fetched
          * @param	bool		$includeDisabled: disabled task will be include during fetching
          * @return	void            FALSE if Scheduler isn't loaded
          */
-        public function __construct($onlyClassname = '', $includeDisabled = TRUE) {
+        public function __construct($onlyClassname = array(), $includeDisabled = TRUE) {
                 if (ExtensionManagementUtility::isLoaded('scheduler')) {
-                        $this->scheduler = t3lib_div::makeInstance('TYPO3\\CMS\\Scheduler\\Scheduler');
-                        $finalClass = $GLOBALS['TYPO3_DB']->escapeStrForLike($GLOBALS['TYPO3_DB']->quoteStr($onlyClassname, 'tx_scheduler_task'), 'tx_scheduler_task');
-                        $where = $onlyClassname != '' && $finalClass != '' ? ' classname LIKE \'' . $finalClass . '\' ' : '';
+                        $this->scheduler = GeneralUtility::makeInstance('TYPO3\\CMS\\Scheduler\\Scheduler');
                         $params = array(
                             'classname' => $onlyClassname,
-                            'includeDisabled' => &$includeDisabled,
-                            'whereClause' => &$where,
+                            'includeDisabled' => $includeDisabled,
                         );
-                        $this->getHook('scheduler_constructor_where', $params);
-                        $taskRecords = $this->scheduler->fetchTasksWithCondition($where, $includeDisabled);
-                        if (count($taskRecords) > 0)
-                                foreach ($taskRecords as $task)
-                                        $this->task[intval($task->getTaskUid())] = $task;
-                        $this->getHook('scheduler_constructor', array('classname' => $onlyClassname, 'includeDisabled' => $includeDisabled));
-                } else
+                        Api::getHook('scheduler_constructor_where', $params, $this);
+                        $taskRecords = $this->scheduler->fetchTasksWithCondition('', $includeDisabled);
+                        if (count($taskRecords) > 0) {
+                                $onlyClassname = (array) $onlyClassname; // make sure we have an array
+                                foreach ($taskRecords as $task) {
+                                        if (empty($onlyClassname) || GeneralUtility::inArray($onlyClassname, $task->getTaskClassName())) {
+                                                $this->task[intval($task->getTaskUid())] = $task;
+                                        }
+                                }
+                                $this->taskCount = count($this->task);
+                        }
+                        Api::getHook('scheduler_constructor', $params, $this);
+                } else {
                         return FALSE;
+                }
         }
 
         /**
@@ -97,12 +102,28 @@ class Scheduler {
          * @return	mixed           FALSE if task id not found, task or array of tasks otherwise
          */
         public function getTask($id = 0) {
-                if ($id > 0 && in_array($id, array_keys($this->task)))
+                if ($id > 0 && in_array($id, array_keys($this->task))) {
                         return $this->task[$id];
-                elseif ($id == 0)
+                } elseif ($id == 0) {
                         return $this->task;
-                else
+                } else {
                         return FALSE;
+                }
+        }
+
+        /**
+         * Function returning if selected task id is a valid task from scheduler
+         * Return FALSE if id is provided but not found in task array of task isn't a valid task object
+         *
+         * @param	int		$id: id of the task to get
+         * @return	mixed           FALSE if task id not found or not a valid task object, TRUE otherwise
+         */
+        public function isValidTask($id) {
+                if (isset($this->task[$id]) && $this->scheduler->isValidTaskObject($this->task[$id])) {
+                        return TRUE;
+                } else {
+                        return FALSE;
+                }
         }
 
         /**
@@ -112,10 +133,11 @@ class Scheduler {
          * @return	bool
          */
         public function isTaskPlanned($id) {
-                if (isset($this->task[$id]) && $this->scheduler->isValidTaskObject($this->task[$id]) && !$this->task[$id]->isDisabled())
+                if (isset($this->task[$id]) && $this->scheduler->isValidTaskObject($this->task[$id]) && !$this->task[$id]->isDisabled()) {
                         return TRUE;
-                else
+                } else {
                         return FALSE;
+                }
         }
 
         /**
@@ -125,10 +147,11 @@ class Scheduler {
          * @return	bool
          */
         public function isTaskRunning($id) {
-                if (isset($this->task[$id]) && $this->scheduler->isValidTaskObject($this->task[$id]) && $this->task[$id]->isExecutionRunning())
+                if (isset($this->task[$id]) && $this->scheduler->isValidTaskObject($this->task[$id]) && $this->task[$id]->isExecutionRunning()) {
                         return TRUE;
-                else
+                } else {
                         return FALSE;
+                }
         }
 
         /**
@@ -138,10 +161,11 @@ class Scheduler {
          * @return	bool            TRUE or FALSE depending if remove was successful (task found, not running, etc.)
          */
         public function destroyTask($id) {
-                if (isset($this->task[$id]) && $this->scheduler->isValidTaskObject($this->task[$id]) && !$this->isTaskRunning($id))
+                if (isset($this->task[$id]) && $this->scheduler->isValidTaskObject($this->task[$id]) && !$this->isTaskRunning($id)) {
                         return $this->scheduler->removeTask($this->task[$id]);
-                else
+                } else {
                         return FALSE;
+                }
         }
 
         /**
@@ -179,7 +203,7 @@ class Scheduler {
                             'isNewTask' => $addTask,
                             'task' => &$task,
                         );
-                        $this->getHook('scheduler_activateTask_begin', $hookConf);
+                        Api::getHook('scheduler_activateTask_begin', $hookConf, $this);
                         // task parameters
                         $taskStarttime = isset($parameters['starttime']) && MathUtility::canBeInterpretedAsInteger($parameters['starttime']) ? $parameters['starttime'] : $GLOBALS['EXEC_TIME'];
                         if (isset($parameters['recurring'])) {
@@ -188,47 +212,29 @@ class Scheduler {
                                 $taskEndtime = isset($r['endtime']) && MathUtility::canBeInterpretedAsInteger($r['endtime']) ? $r['endtime'] : 0;
                                 $taskParallel = isset($r['multiple']) && $r['multiple'] ? TRUE : FALSE;
                                 $taskCronline = isset($r['cron']) ? $r['cron'] : '';
-                                if ($taskInterval == 0 && $taskCronline == '')
+                                if ($taskInterval == 0 && $taskCronline == '') {
                                         $taskInterval = 60;
+                                }
                                 $task->registerRecurringExecution($taskStarttime, $taskInterval, $taskEndtime, $taskParallel, $taskCronline);
                         } else {
                                 $task->registerSingleExecution($taskStarttime);
                         }
                         $task->setDisabled(FALSE);
-                        if (is_array($parameters['options']))
-                                foreach ($parameters['options'] as $option => $value)
-                                        if (method_exists($task, $option))
+                        if (is_array($parameters['options'])) {
+                                foreach ($parameters['options'] as $option => $value) {
+                                        if (method_exists($task, $option)) {
                                                 call_user_func_array(array($task, $option), (array) $value);
-//                                                $task->$option($value);
+                                        }
+                                }
+                        }
                         if ($addTask) {
                                 $this->scheduler->addTask($task);
                                 $this->task[intval($task->getTaskUid())] = $task;
                         } else {
                                 $task->save();
                         }
-                        $this->getHook('scheduler_activateTask_end', $hookConf);
+                        Api::getHook('scheduler_activateTask_end', $hookConf, $this);
                 }
-        }
-
-        /**
-         * Hooks function
-         *
-         * @param	string		$hookName: name of the hook
-         * @param	array		$hookConf: conf to send to the hook
-         * @return	TRUE if hooks found FALSE overwise
-         */
-        protected function getHook($hookName, &$hookConf = array()) {
-                if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['cmd_api'][$hookName])) {
-                        $hookConf['parentObj'] = &$this;
-                        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['cmd_api'][$hookName] as $key => $classRef) {
-                                $_procObj = GeneralUtility::getUserObj($classRef);
-                                $_procObj->$hookName($hookConf, $this);
-                        }
-                        return TRUE;
-                }
-                return FALSE;
         }
 
 }
-
-?>

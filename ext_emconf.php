@@ -15,7 +15,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'description' => 'Collection of useful functions helping in extension development',
 	'category' => 'misc',
 	'shy' => 0,
-	'version' => '6.0.5',
+	'version' => '6.1.0',
 	'dependencies' => 'cms',
 	'conflicts' => '',
 	'priority' => '',
@@ -35,7 +35,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'constraints' => array(
 		'depends' => array(
 			'typo3' => '6.0.0-6.2.99',
-			'php' => '5.3.7-0.0.0',
+			'php' => '5.3.7-5.5.99',
 			'cms' => '',
 		),
 		'conflicts' => array(

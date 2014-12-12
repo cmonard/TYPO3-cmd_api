@@ -225,7 +225,7 @@ class LocalRecordList extends \TYPO3\CMS\Recordlist\RecordList\DatabaseRecordLis
                                         $onclickAdditionalParams = ($button['additionalParams'] != '' ? str_replace('###uid###', $uid, $button['additionalParams']) : '') . $L;
                                         $onclick = BackendUtility::viewOnClick($onclickId, '', $onclickRootline, '', $onclickAlturl, $onclickAdditionalParams);
                                         // Img params
-                                        $img = '../' . ($button['image'] ? $button['image'] : 'typo3conf/ext/cmd_api/res/cbl/' . ($button['icon'] ? $button['icon'] : 'view_icon.gif'));
+                                        $img = '../' . ($button['image'] ? $button['image'] : 'typo3conf/ext/cmd_api/Resources/Public/Icons/Cbl/' . ($button['icon'] ? $button['icon'] : 'view_icon.gif'));
                                         // the Cell
                                         $cells[] = '<a href="#" onclick="' . htmlspecialchars($onclick) . '">' .
                                                 '<img' . IconUtility::skinImg($this->backPath, $img, 'width="14" height="14"') . ' title="' . $button['title.'][$BE_L] . '" alt="" />' .

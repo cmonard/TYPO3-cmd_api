@@ -26,7 +26,7 @@ namespace CMD\CmdApi;
  * ************************************************************* */
 
 /**
- * Librairie de fonction commune aux extensions
+ * Librairie de fonctions commune aux extensions
  *
  * @author	Christophe Monard   <contact@cmonard.fr>
  *
@@ -36,22 +36,26 @@ namespace CMD\CmdApi;
  *
  * [CLASS/FUNCTION INDEX of SCRIPT]
  *
- *   65: class Api
- *   73:        static public function cleanTemplate($content)
- *   90:        static public function stripAccentsAndSpaces_doTransform($content, $spaceReplacer = '', $transform = '', $trueUTF8 = TRUE)
- *  124:        static public function getCheckboxValues($table, $field, $row)
- *  143:        static public function getFieldsFromTable($table, $exclude = array('l10n_parent', 'l10n_diffsource'))
- *  167:        static public function sendMail($param = array())
- *  237:        static public function getTS($rootPid = 1, $ext = '')
- *  287:        static public function initEID($param, &$connected = '', &$BE_USER = '', $getTSFE = FALSE)
- *  330:        static public function getCache($key, $identifier, $expTime = 0)
- *  345:        static public function setCache($key, $identifier, $data)
- *  359:        static public function autoConnect($userRow)
- *  375:        static public function manageCookie($key, $setAndSave = FALSE, $data = '', $type = 'user', $userObject = NULL)
- *  416:        static public function addPItoST43for6x($key, $namespace, $prefix = '', $type = 'list_type', $cached = 0)
- *  468:        static public function flexFormAutoLoader($extKey)
+ *   69: class Api
+ *   77:        static public function cleanTemplate($content)
+ *   94:        static public function stripAccentsAndSpaces_doTransform($content, $spaceReplacer = '', $transform = '', $trueUTF8 = TRUE)
+ *  128:        static public function getCheckboxValues($table, $field, $row)
+ *  147:        static public function getFieldsFromTable($table, $exclude = array('l10n_parent', 'l10n_diffsource'))
+ *  171:        static public function sendMail($param = array())
+ *  241:        static public function getTS($rootPid = 1, $ext = '')
+ *  291:        static public function initEID($param, &$connected = '', &$BE_USER = '', $getTSFE = FALSE)
+ *  334:        static public function getCache($key, $identifier, $expTime = 0)
+ *  349:        static public function setCache($key, $identifier, $data)
+ *  363:        static public function autoConnect($userRow)
+ *  379:        static public function manageCookie($key, $setAndSave = FALSE, $data = '', $type = 'user', $userObject = NULL)
+ *  420:        static public function addPItoST43for6x($key, $namespace, $prefix = '', $type = 'list_type', $cached = 0)
+ *  472:        static public function flexFormAutoLoader($extKey)
+ *  493:        static public function getHook($hookName, &$hookConf, $pObj)
+ *  521:        static public function userFunc($funcName, &$funcConf, $pObj)
+ *  534:        static public function getRowLanguage($table, $row, $contentOL)
+ *  551:        static public function subpartContent($content, $subpart, $keep = TRUE)
  *
- * TOTAL FUNCTIONS: 13
+ * TOTAL FUNCTIONS: 17
  *
  */
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -454,7 +458,7 @@ plugin.' . $cN . $prefix . ' {
                         \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTypoScript($key, 'setup', '
 # Setting ' . $key . ' plugin TypoScript
 ' . $addLine . '
-', 43);
+', 'defaultContentRendering');
                 }
         }
 
@@ -475,6 +479,81 @@ plugin.' . $cN . $prefix . ' {
                         $GLOBAL['TCA']['tt_content']['types']['list']['subtypes_excludelist'][$pluginSignature] = 'layout,select_key,recursive';
                         $GLOBAL['TCA']['tt_content']['types']['list']['subtypes_addlist'][$pluginSignature] = 'pi_flexform';
                         \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addPiFlexFormValue($pluginSignature, 'FILE:EXT:' . $extKey . '/Configuration/FlexForms/' . $FlexForm);
+                }
+        }
+
+        /**
+         * Fonction appelant le(s) hook(s)
+         *
+         * @param	string		$hookName: Nom du hook à déclancher
+         * @param	array		$hookConf: tableau de conf à passer aux hook
+         * @param       object          $pObj: Parent object
+         * @return	TRUE if hooks found FALSE overwise
+         */
+        static public function getHook($hookName, &$hookConf, $pObj) {
+                // new recommanded coding guideline
+                if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['cmd_api'][$hookName])) {
+                        $hookConf['parentObj'] = &$pObj;
+                        foreach ($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['cmd_api'][$hookName] as $key => $classRef) {
+                                $_procObj = GeneralUtility::getUserObj($classRef);
+                                $_procObj->$hookName($hookConf, $this);
+                        }
+                        return TRUE;
+                }
+                // old method still available for compat. issu
+                if (is_array($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cmd_api/class.tx_cmdapi_lib.php'][$hookName])) {
+                        foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['cmd_api/class.tx_cmdapi_lib.php'][$hookName] as $funcRef) {
+                                Api::userFunc($funcRef, $hookConf, $pObj);
+                        }
+                        return TRUE;
+                }
+                return FALSE;
+        }
+
+        /**
+         * Fonction appelant une userfunc avec le tableau de paramettre passé à la fonction
+         *
+         * @param	string		$funcName: Nom de la fonction
+         * @param	array		$funcConf: tableau de conf à passer à la fonction
+         * @param       object          $pObj: Parent object
+         * @return	le resultat de l'userFunc
+         */
+        static public function userFunc($funcName, &$funcConf, $pObj) {
+                $funcConf['parentObj'] = &$pObj;
+                return GeneralUtility::callUserFunction($funcName, $funcConf, $this);
+        }
+
+        /**
+         * Fonction interne utilisé par generateMarkersFromTableRow (peut être utilisé séparément)
+         * Récupère la ligne courrante dans la langue du FO
+         *
+         * @param	string		$table: nom de la table dans laquelle on récupère l'enregistrement
+         * @param	array		$row: enregistrement à traiter
+         * @return	La ligne courrante traduite si necessaire (ou vide)
+         */
+        static public function getRowLanguage($table, $row, $contentOL) {
+                if ($table == 'pages') {
+                        $row = $GLOBALS['TSFE']->sys_page->getPageOverlay($row);
+                } elseif ($this->contentOL != '') {
+                        $row = $GLOBALS['TSFE']->sys_page->getRecordOverlay($table, $row, $GLOBALS['TSFE']->sys_language_content, $contentOL);
+                }
+                return $row;
+        }
+
+        /**
+         * Fonction supprimant ou laissant active un subpart donné
+         *
+         * @param	string		$content: Contenu à traiter
+         * @param	string		$subpart: le nom du subpart à traiter
+         * @param	bool		$keep: TRUE on conserve, FALSE on supprime le subpart
+         * @return	Contenu généré
+         */
+        static public function subpartContent($content, $subpart, $keep = TRUE) {
+                $localcObj = GeneralUtility::makeInstance('TYPO3\\CMS\\Frontend\\ContentObject\\ContentObjectRenderer');
+                if ($keep) { // on valide le subpart
+                        return $localcObj->substituteSubpart($content, $subpart, $localcObj->getSubpart($content, $subpart));
+                } else { // on supprime le subparts
+                        return $localcObj->substituteSubpart($content, $subpart, '');
                 }
         }
 
